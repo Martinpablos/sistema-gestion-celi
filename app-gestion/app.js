@@ -1,0 +1,336 @@
+// Importar Firebase desde los CDNs oficiales
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+import { getFirestore, collection, addDoc, getDocs, doc, getDoc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+// Tus credenciales reales de Firebase
+const firebaseConfig = {
+    apiKey: "AIzaSyDa4nqcc3-ZWBk51cZPxJeegvyHEYMT_hg",
+    authDomain: "sistema-celi.firebaseapp.com",
+    projectId: "sistema-celi",
+    storageBucket: "sistema-celi.firebasestorage.app",
+    messagingSenderId: "167240526122",
+    appId: "1:167240526122:web:b160382d6c4087a6435653",
+    measurementId: "G-39YYQFK8QV"
+};
+
+// Inicializar Firebase (solo exportamos db)
+const app = initializeApp(firebaseConfig);
+export const db = getFirestore(app);
+
+// Importar las funciones del módulo de recetas
+import { cargarInsumosParaSelect, agregarFilaIngrediente, guardarOActualizarReceta, cargarRecetas } from "./recetas.js";
+import { cargarStockProductos, inicializarBuscadorStock } from "./stock.js";
+import { cargarListaPrecios, inicializarBuscadorPrecios } from "./precios.js";
+import { cargarClientes, inicializarBuscadorClientes } from "./clientes.js";
+import { inicializarSelectsVenta, configurarCarrito, configurarRegistroVenta, cargarRegistroDiario, inicializarFiltrosRegistro } from "./ventas.js";
+import { cargarBalanceYGastos } from "./balance.js";
+import { inicializarAutenticacionBalance } from "./auth.js";
+
+// ==========================================
+// 1. LÓGICA DE MATERIA PRIMA
+// ==========================================
+let idItemEnEdicion = null;
+
+async function cargarMateriasPrimas() {
+    const tabla = document.getElementById("tabla-materia-prima");
+    if (!tabla) return;
+
+    tabla.innerHTML = "";
+
+    try {
+        const querySnapshot = await getDocs(collection(db, "materiaPrima"));
+        
+        // 1. Pasamos los documentos a un array para poder ordenarlos
+        let listaMaterias = [];
+        querySnapshot.forEach((docSnap) => {
+            listaMaterias.push({ id: docSnap.id, ...docSnap.data() });
+        });
+
+        // 2. Ordenamos alfabéticamente por el campo 'nombre'
+        listaMaterias.sort((a, b) => {
+            const nombreA = a.nombre || "";
+            const nombreB = b.nombre || "";
+            return nombreA.localeCompare(nombreB);
+        });
+
+        // 3. Recorremos el array ya ordenado para armar la tabla
+        listaMaterias.forEach((item) => {
+            const id = item.id;
+            const cantidad = Number(item.cantidad) || 0;
+            const precio = Number(item.precio) || 0;
+            const stock = Number(item.stock) || 0;
+            const costoUnitario = cantidad > 0 ? (precio / cantidad).toFixed(2) : "0.00";
+
+            tabla.innerHTML += `
+                <tr>
+                    <td><strong>${item.nombre || "Sin nombre"}</strong></td>
+                    <td>${cantidad}</td>
+                    <td>$${precio}</td>
+                    <td>$${costoUnitario}</td>
+                    <td><span class="badge bg-success">Disponible (${stock})</span></td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-secondary me-1" onclick="prepararEdicion('${id}')">Editar</button>
+                        <button class="btn btn-sm btn-outline-danger" onclick="eliminarMateriaPrima('${id}')">Eliminar</button>
+                    </td>
+                </tr>
+            `;
+        });
+
+    } catch (e) {
+        console.error("Error al cargar datos de Firebase: ", e);
+    }
+}
+
+window.eliminarMateriaPrima = async function(id) {
+    if (confirm("¿Estás seguro de que querés eliminar esta materia prima?")) {
+        try {
+            await deleteDoc(doc(db, "materiaPrima", id));
+            cargarMateriasPrimas();
+        } catch (e) {
+            console.error("Error al eliminar la materia prima: ", e);
+        }
+    }
+};
+
+async function guardarMateriaPrima(nombre, cantidad, precio, stock) {
+    try {
+        await addDoc(collection(db, "materiaPrima"), {
+            nombre: nombre,
+            cantidad: Number(cantidad),
+            precio: Number(precio),
+            stock: Number(stock),
+            fecha: new Date()
+        });
+        cargarMateriasPrimas();
+    } catch (e) {
+        console.error("Error al guardar en Firebase: ", e);
+    }
+}
+
+async function actualizarMateriaPrima(id, nombre, cantidad, precio, stock) {
+    try {
+        const refDoc = doc(db, "materiaPrima", id);
+        await updateDoc(refDoc, {
+            nombre: nombre,
+            cantidad: Number(cantidad),
+            precio: Number(precio),
+            stock: Number(stock)
+        });
+        cargarMateriasPrimas();
+    } catch (e) {
+        console.error("Error al actualizar: ", e);
+    }
+}
+
+window.prepararEdicion = async function(id) {
+    try {
+        const refDoc = doc(db, "materiaPrima", id);
+        const snapshot = await getDoc(refDoc);
+        
+        if (snapshot.exists()) {
+            const data = snapshot.data();
+            document.getElementById("mpNombre").value = data.nombre;
+            document.getElementById("mpCantidad").value = data.cantidad;
+            document.getElementById("mpPrecio").value = data.precio;
+            document.getElementById("mpStock").value = data.stock;
+            
+            idItemEnEdicion = id; 
+
+            const modalEl = document.getElementById('modalMateriaPrima');
+            const modal = new bootstrap.Modal(modalEl);
+            modal.show();
+        }
+    } catch (e) {
+        console.error("Error al cargar datos para editar: ", e);
+    }
+};
+
+const formMateriaPrima = document.getElementById("formMateriaPrima");
+if (formMateriaPrima) {
+    formMateriaPrima.addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        const nombre = document.getElementById("mpNombre").value;
+        const cantidad = document.getElementById("mpCantidad").value;
+        const precio = document.getElementById("mpPrecio").value;
+        const stock = document.getElementById("mpStock").value;
+
+        if (idItemEnEdicion) {
+            await actualizarMateriaPrima(idItemEnEdicion, nombre, cantidad, precio, stock);
+            idItemEnEdicion = null; 
+        } else {
+            await guardarMateriaPrima(nombre, cantidad, precio, stock);
+        }
+
+        formMateriaPrima.reset();
+        const modalEl = document.getElementById('modalMateriaPrima');
+        const modal = bootstrap.Modal.getInstance(modalEl);
+        if (modal) modal.hide();
+    });
+}
+
+const buscadorMp = document.getElementById("buscadorMp");
+if (buscadorMp) {
+    buscadorMp.addEventListener("input", (e) => {
+        const textoBusqueda = e.target.value.toLowerCase();
+        const filas = document.querySelectorAll("#tabla-materia-prima tr");
+
+        filas.forEach(fila => {
+            const nombreInsumo = fila.querySelector("td").textContent.toLowerCase();
+            if (nombreInsumo.includes(textoBusqueda)) {
+                fila.style.display = "";
+            } else {
+                fila.style.display = "none";
+            }
+        });
+    });
+}
+
+
+// ==========================================
+// 2. INICIALIZACIÓN GENERAL AL CARGAR LA PÁGINA
+// ==========================================
+document.addEventListener("DOMContentLoaded", () => {
+    // Cargar Materia Prima
+    cargarMateriasPrimas();
+
+    // Cargar Recetas y preparar selectores
+    cargarRecetas();
+    cargarInsumosParaSelect();
+
+    // Cargar Stock de Productos y Buscador
+    cargarStockProductos();
+    inicializarBuscadorStock();
+
+    // Cargar Lista de Precios y Buscador
+    cargarListaPrecios();
+    inicializarBuscadorPrecios();
+
+    // Dentro de DOMContentLoaded:
+    cargarClientes();
+    inicializarBuscadorClientes();
+
+    inicializarSelectsVenta();
+    configurarCarrito();
+    configurarRegistroVenta();
+    cargarRegistroDiario();
+    inicializarFiltrosRegistro();
+
+    cargarBalanceYGastos();
+
+    //DOMContentLoaded:
+    inicializarAutenticacionBalance();
+
+    // Evento botón "+ Agregar Ingrediente" (en el modal de recetas)
+    const btnAgregarIngrediente = document.getElementById("btnAgregarFilaIngrediente");
+    if (btnAgregarIngrediente) {
+        btnAgregarIngrediente.addEventListener("click", () => {
+            agregarFilaIngrediente();
+        });
+    }
+
+   // Evento envío de formulario Receta
+    const formReceta = document.getElementById("formReceta");
+    if (formReceta) {
+        formReceta.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const nombre = document.getElementById("recetaNombre").value;
+            const tipo = document.getElementById("recetaTipo").value;
+            const rendimiento = document.getElementById("recetaRendimiento").value;
+
+            // Llamamos a la función correcta unificada
+            await guardarOActualizarReceta(nombre, tipo, rendimiento);
+
+            formReceta.reset();
+            document.getElementById("contenedorIngredientes").innerHTML = "";
+            const modalEl = document.getElementById('modalReceta');
+            const modal = bootstrap.Modal.getInstance(modalEl);
+            if (modal) modal.hide();
+        });
+    }
+});
+
+
+// buscador de recetas
+const buscadorRecetas = document.getElementById("buscadorRecetas"); // Asegúrate de que el input en tu HTML de recetas tenga este ID
+if (buscadorRecetas) {
+    buscadorRecetas.addEventListener("input", (e) => {
+        const textoBusqueda = e.target.value.toLowerCase();
+        const filas = document.querySelectorAll("#tabla-recetas tr"); // Apunta a la tabla de recetas
+
+        filas.forEach(fila => {
+            const celdaNombre = fila.querySelector("td");
+            if (celdaNombre) {
+                const nombreReceta = celdaNombre.textContent.toLowerCase();
+                if (nombreReceta.includes(textoBusqueda)) {
+                    fila.style.display = "";
+                } else {
+                    fila.style.display = "none";
+                }
+            }
+        });
+    });
+}
+
+//buscador de stock de productos
+const buscadorStock = document.getElementById("buscadorStock");
+if (buscadorStock) {
+    buscadorStock.addEventListener("input", (e) => {
+        const textoBusqueda = e.target.value.toLowerCase();
+        const filas = document.querySelectorAll("#tabla-stock tr");
+
+        filas.forEach(fila => {
+            const celdaNombre = fila.querySelector("td");
+            if (celdaNombre) {
+                const nombre = celdaNombre.textContent.toLowerCase();
+                if (nombre.includes(textoBusqueda)) {
+                    fila.style.display = "";
+                } else {
+                    fila.style.display = "none";
+                }
+            }
+        });
+    });
+}
+
+//buscador de precios
+const buscadorPrecios = document.getElementById("buscadorPrecios");
+if (buscadorPrecios) {
+    buscadorPrecios.addEventListener("input", (e) => {
+        const textoBusqueda = e.target.value.toLowerCase();
+        const filas = document.querySelectorAll("#tabla-precios tr");
+
+        filas.forEach(fila => {
+            const celdaNombre = fila.querySelector("td");
+            if (celdaNombre) {
+                const nombre = celdaNombre.textContent.toLowerCase();
+                if (nombre.includes(textoBusqueda)) {
+                    fila.style.display = "";
+                } else {
+                    fila.style.display = "none";
+                }
+            }
+        });
+    });
+}
+
+//buscador de clientes
+const buscadorClientes = document.getElementById("buscadorClientes");
+if (buscadorClientes) {
+    buscadorClientes.addEventListener("input", (e) => {
+        const textoBusqueda = e.target.value.toLowerCase();
+        const filas = document.querySelectorAll("#tabla-clientes tr");
+
+        filas.forEach(fila => {
+            const celdaNombre = fila.querySelector("td");
+            if (celdaNombre) {
+                const nombre = celdaNombre.textContent.toLowerCase();
+                if (nombre.includes(textoBusqueda)) {
+                    fila.style.display = "";
+                } else {
+                    fila.style.display = "none";
+                }
+            }
+        });
+    });
+}

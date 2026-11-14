@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="author" content="MartinP">
+    <meta name="description" content="Sistema de Gestión para Panaderia y Reposteria Celicitas">
+    <meta name="keywords" content="panaderia, reposteria, celicitas, gestion, sistema, ERP">
+    <title>ERP Panadería - Sistema de Gestión</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="styles.css" rel="stylesheet">
+</head>
+<body>
+    <div class="sidebar d-flex flex-column p-4">
+        <h4 class="fw-bold mb-4 text-dark">Celicita</h4>
+        <ul class="nav nav-pills flex-column mb-auto">
+            <li class="nav-item">
+                <a href="#materia-prima" class="nav-link active" data-bs-toggle="tab">Materia Prima</a>
+            </li>
+            <li class="nav-item">
+                <a href="#recetas" class="nav-link" data-bs-toggle="tab">Recetas</a>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#stock">Stock de Productos</button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#precios">Lista de Precios</button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#ventas">Cargar Venta</button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#clientes">Clientes</button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#balance">Costos / Ganancias</button>
+            </li>
+        </ul>
+    </div>
+
+    <div class="main-content">
+        <div class="tab-content">
+
+            <!-- SECCIÓN 1: MATERIA PRIMA -->
+<div class="tab-pane fade show active" id="materia-prima">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Gestión de Materia Prima</h2>
+        <button class="btn btn-dark" data-bs-toggle="modal" data-bs-target="#modalMateriaPrima">+ Nueva Materia Prima</button>
+    </div>
+    
+    <!-- NUEVO: BARRA DE BÚSQUEDA -->
+    <div class="mb-3">
+        <input type="text" id="buscadorMp" class="form-control custom-card" placeholder="🔍 Buscar materia prima por nombre...">
+    </div>
+
+    <div class="card custom-card p-4 shadow-sm">
+        <table class="table align-middle">
+            <thead>
+                <tr>
+                    <th>Nombre</th>
+                    <th>Cantidad Comprada</th>
+                    <th>Precio Total</th>
+                    <th>Costo (gr/ml)</th>
+                    <th>Stock Actual</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody id="tabla-materia-prima">
+                <!-- Se carga dinámicamente -->
+            </tbody>
+        </table>
+    </div>
+</div>
+            <!-- BOTON DE NUEVA MATERIA PRIMA -->
+            <div class="modal fade" id="modalMateriaPrima" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content custom-card p-3">
+                        <div class="modal-header border-0">
+                            <h5 class="modal-title fw-bold">Agregar Nueva Materia Prima</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <form id="formMateriaPrima">
+                                <div class="mb-3">
+                                    <label class="form-label">Nombre del Insumo</label>
+                                    <input type="text" class="form-label form-control" id="mpNombre" required placeholder="Ej: Harina, Levadura...">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Cantidad / Peso Comprado (ej: 5kg, 1lt)</label>
+                                    <input type="number" step="any" class="form-control" id="mpCantidad" required placeholder="5">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Precio Total Pagado ($)</label>
+                                    <input type="number" step="any" class="form-control" id="mpPrecio" required placeholder="15000">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Stock Inicial</label>
+                                    <input type="number" step="any" class="form-control" id="mpStock" required placeholder="5">
+                                </div>
+                                <button type="submit" class="btn btn-dark w-100 py-2">Guardar Insumo</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECCIÓN 2: RECETAS Y SUB-RECETAS -->
+                <div class="tab-pane fade" id="recetas">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h2>Gestión de Recetas y Productos</h2>
+                        <button class="btn btn-dark" data-bs-toggle="modal" data-bs-target="#modalReceta" onclick="window.resetearModalReceta()">+ Nueva Receta</button>
+                    </div>
+
+                    <!-- BARRA DE BÚSQUEDA DE RECETAS -->
+                    <div class="mb-3">
+                        <input type="text" id="buscadorRecetas" class="form-control custom-card" placeholder="🔍 Buscar receta o producto por nombre...">
+                    </div>
+                
+                    <div class="card custom-card p-4 shadow-sm">
+                        <table class="table align-middle">
+                            <thead>
+                                <tr>
+                                    <th>Nombre de la Receta</th>
+                                    <th>Tipo</th>
+                                    <th>Rendimiento</th>
+                                    <th>Costo Total</th>
+                                    <th>Costo Unitario</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabla-recetas">
+                                <!-- Los datos de las recetas se cargarán dinámicamente aquí -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <!-- MODAL NUEVA / EDITAR RECETA -->
+                <div class="modal fade" id="modalReceta" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content custom-card p-3">
+                            <div class="modal-header border-0">
+                                <h5 class="modal-title fw-bold">Gestión de Receta / Producto</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <form id="formReceta">
+                                    <div class="mb-3">
+                                        <label class="form-label">Nombre de la Receta o Producto</label>
+                                        <input type="text" class="form-control" id="recetaNombre" required placeholder="Ej: Pan de Miga, Sándwich de Miga...">
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label">Tipo</label>
+                                            <select class="form-control" id="recetaTipo">
+                                                <option value="subreceta">Sub-receta (Ej: Pan de Miga)</option>
+                                                <option value="final">Producto Final (Ej: Sándwich de Miga)</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label">Rendimiento (Unidades que salen)</label>
+                                            <input type="number" step="any" class="form-control" id="recetaRendimiento" required placeholder="6">
+                                        </div>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label fw-bold">Ingredientes y Sub-recetas</label>
+                                        <p class="text-muted small">Aquí seleccionaremos los insumos de la base de datos para armar la receta.</p>
+                                        <!-- Espacio dinámico para agregar ingredientes -->
+                                        <div id="contenedorIngredientes" class="border p-3 mb-3 custom-card">
+                                            <!-- Los ítems seleccionados se agregarán aquí -->
+                                        </div>
+                                        <button type="button" class="btn btn-outline-dark btn-sm" id="btnAgregarFilaIngrediente">+ Agregar Ingrediente</button>
+                                    </div>
+                                
+                                    <button type="submit" class="btn btn-dark w-100 py-2 mt-3">Guardar Receta</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            
+            <!-- SECCIÓN 3: STOCK DE PRODUCTOS TERMINADOS -->
+            <div class="tab-pane fade" id="stock">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h2>Control de Stock (Productos Terminados)</h2>
+                    <button class="btn btn-dark" data-bs-toggle="modal" data-bs-target="#modalStock">+ Registrar Producción / Salida</button>
+                </div>
+            
+                <!-- BARRA DE BÚSQUEDA DE STOCK -->
+                <div class="mb-3">
+                    <input type="text" id="buscadorStock" class="form-control custom-card" placeholder="🔍 Buscar producto terminado...">
+                </div>
+            
+                <!-- TABLA DE STOCK -->
+                <div class="card custom-card p-4 shadow-sm">
+                    <table class="table align-middle">
+                        <thead>
+                            <tr>
+                                <th>Producto</th>
+                                <th>Stock Actual (Unidades)</th>
+                                <th>Costo Unitario de Producción</th>
+                                <th>Valor Total en Stock</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabla-stock">
+                            <!-- Los datos de stock se cargarán dinámicamente aquí -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- SECCIÓN 4: LISTA DE PRECIOS -->
+            <div class="tab-pane fade" id="precios">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h2>Lista de Precios y Márgenes</h2>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-success btn-sm" onclick="imprimirMinorista()">🖨️ Minorista</button>
+                        <button class="btn btn-primary btn-sm" onclick="imprimirMayorista()">🖨️ Mayorista</button>
+                        <button class="btn btn-dark" data-bs-toggle="modal" data-bs-target="#modalConfigGlobal">⚙️ Global</button>
+                    </div>
+                </div>
+            
+                <!-- BARRA DE BÚSQUEDA DE PRECIOS -->
+                <div class="mb-3">
+                    <input type="text" id="buscadorPrecios" class="form-control custom-card" placeholder="🔍 Buscar producto en lista de precios...">
+                </div>
+            
+                <!-- TABLA DE PRECIOS -->
+                <div class="card custom-card p-4 shadow-sm">
+                    <table class="table align-middle">
+                        <thead>
+                            <tr>
+                                <th>Producto</th>
+                                <th>Costo de Producción</th>
+                                <th>Precio Minorista (Principal)</th>
+                                <th>Precio Mayorista</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabla-precios">
+                            <!-- Los precios calculados se cargarán dinámicamente aquí -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <!-- SECCIÓN CLIENTES -->
+            <div class="tab-pane fade" id="clientes">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h2>Gestión de Clientes</h2>
+                    <button class="btn btn-dark" data-bs-toggle="modal" data-bs-target="#modalCliente">+ Nuevo Cliente</button>
+                </div>
+            
+                <!-- Buscador de Clientes -->
+                <div class="mb-3">
+                    <input type="text" id="buscadorClientes" class="form-control custom-card" placeholder="🔍 Buscar cliente por nombre o DNI...">
+                </div>
+            
+                <!-- Tabla de Clientes -->
+                <div class="card custom-card p-4 shadow-sm">
+                    <table class="table align-middle">
+                        <thead>
+                            <tr>
+                                <th>Nombre y Apellido</th>
+                                <th>DNI</th>
+                                <th>Teléfono</th>
+                                <th>Cuenta Corriente (Deuda)</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabla-clientes">
+                            <!-- Los clientes se cargarán dinámicamente aquí -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <!-- SECCIÓN 5: CARGAR VENTA -->
+            <div class="tab-pane fade" id="ventas">
+                <h2 class="mb-4">Registro de Ventas y Caja</h2>
+            
+                <div class="row">
+                    <!-- COLUMNA IZQUIERDA: CARGAR VENTA Y CARRITO -->
+                    <div class="col-lg-8">
+                        <div class="card custom-card p-4 shadow-sm mb-4">
+                            <h5 class="card-title mb-3">Nueva Venta</h5>
+                            
+                            <form id="formVenta">
+                                <div class="row g-3 mb-3">
+                                    <!-- Selector de Cliente -->
+                                    <div class="col-md-6">
+                                        <label for="selectCliente" class="form-label">Cliente</label>
+                                        <select id="selectCliente" class="form-select" required>
+                                            <option value="">Seleccionar cliente...</option>
+                                        </select>
+                                    </div>
+                                
+                                    <!-- Selector de Producto (Stock) -->
+                                    <div class="col-md-6">
+                                        <label for="selectProductoVenta" class="form-label">Producto Terminado</label>
+                                        <select id="selectProductoVenta" class="form-select">
+                                            <option value="">Seleccionar producto...</option>
+                                        </select>
+                                    </div>
+                                
+                                    <!-- Cantidad -->
+                                    <div class="col-md-4">
+                                        <label for="cantidadVenta" class="form-label">Cantidad</label>
+                                        <input type="number" min="1" value="1" class="form-control" id="cantidadVenta">
+                                    </div>
+                                
+                                    <!-- Botón Agregar al Carrito -->
+                                    <div class="col-md-8 d-flex align-items-end">
+                                        <button type="button" class="btn btn-dark w-100" id="btnAgregarCarrito">➕ Agregar al Carrito</button>
+                                    </div>
+                                </div>
+                            </form>
+                        
+                            <!-- TABLA DEL CARRITO -->
+                            <h6 class="mt-4 mb-2">Carrito de Compras</h6>
+                            <div class="table-responsive mb-3">
+                                <table class="table align-middle">
+                                    <thead>
+                                        <tr>
+                                            <th>Producto</th>
+                                            <th>Cant.</th>
+                                            <th>Subtotal</th>
+                                            <th>Acción</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="tabla-carrito">
+                                        <!-- Ítems agregados temporalmente al carrito -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        
+                            <div class="d-flex justify-content-between align-items-center mb-4">
+                                <h4 class="mb-0">Total: $<span id="totalCarrito">0.00</span></h4>
+                            </div>
+                        
+                            <!-- MEDIO DE PAGO Y BOTÓN FINAL -->
+                            <div class="row g-3 align-items-end">
+                                <div class="col-md-6">
+                                    <label for="medioPago" class="form-label">Medio de Pago</label>
+                                    <select id="medioPago" class="form-select" required>
+                                        <option value="efectivo">Efectivo (Contado)</option>
+                                        <option value="transferencia">Transferencia</option>
+                                        <option value="cuenta_corriente">Cuenta Corriente (A pagar después)</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <button type="button" class="btn btn-success w-100 py-2 fw-bold" id="btnRegistrarVenta">💾 Registrar Venta</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                
+                    <!-- COLUMNA DERECHA: REGISTRO DE VENTA DIARIO -->
+                    <div class="col-lg-4">
+                        <div class="card custom-card p-3 shadow-sm">
+                            <h5 class="card-title text-center mb-3">Registro Diario</h5>
+                            
+                            <!-- Pestañas de filtrado rápido (General, Contado, Transferencia, Cuentas) -->
+                            <ul class="nav nav-pills nav-fill mb-3" id="pills-tab" role="tablist">
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link active btn-sm" data-filtro="todos">General</button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link btn-sm" data-filtro="efectivo">Contado</button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link btn-sm" data-filtro="transferencia">Transf.</button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link btn-sm text-danger" data-filtro="cuenta_corriente">Fiado</button>
+                                </li>
+                            </ul>
+                        
+                            <!-- Lista de ventas registradas -->
+                            <div class="table-responsive" style="max-height: 500px; overflow-y: auto;">
+                                <table class="table table-sm align-middle">
+                                    <tbody id="tabla-registro-diario">
+                                        <!-- Historial de ventas del día -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- SECCIÓN 6: COSTOS Y GANANCIAS (BALANCE) -->
+            <div class="tab-pane fade" id="balance">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h2>Balance de Costos y Ganancias</h2>
+                    <button class="btn btn-dark" data-bs-toggle="modal" data-bs-target="#modalGasto">+ Registrar Gasto / Costo</button>
+                </div>
+            
+                <div class="row mb-3 align-items-center">
+                    <div class="col-md-4">
+                        <label for="filtroMesBalance" class="form-label fw-bold">Seleccionar Mes a Consultar:</label>
+                        <input type="month" id="filtroMesBalance" class="form-control">
+                    </div>
+                </div>
+
+                <!-- TARJETAS DE RESUMEN FINANCIERO -->
+                <div class="row g-3 mb-4">
+                    <div class="col-md-4">
+                        <div class="card custom-card p-3 shadow-sm border-success">
+                            <h6 class="text-muted">Ganancia Diaria (Hoy)</h6>
+                            <h3 class="fw-bold text-success" id="gananciaDiaria">$0.00</h3>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card custom-card p-3 shadow-sm border-primary">
+                            <h6 class="text-muted">Ganancia Semanal</h6>
+                            <h3 class="fw-bold text-primary" id="gananciaSemanal">$0.00</h3>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card custom-card p-3 shadow-sm border-dark">
+                            <h6 class="text-muted">Ganancia Neta Mensual</h6>
+                            <h3 class="fw-bold text-dark" id="gananciaMensual">$0.00</h3>
+                            <small class="text-muted">(Ventas - Costos - Gastos)</small>
+                        </div>
+                    </div>
+                </div>
+            
+                <!-- TABLA DE GASTOS MENSUALES / OPERATIVOS -->
+                <div class="card custom-card p-4 shadow-sm mb-4">
+                    <h5 class="mb-3">Gastos Operativos del Mes (Servicios, Empleados, Insumos)</h5>
+                    <table class="table align-middle">
+                        <thead>
+                            <tr>
+                                <th>Fecha</th>
+                                <th>Concepto / Gasto</th>
+                                <th>Categoría</th>
+                                <th>Monto</th>
+                                <th>Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabla-gastos">
+                            <!-- Los gastos operativos se cargarán aquí -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Modal Registrar Pago -->
+            <div class="modal fade" id="modalPago" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <form id="formPago">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="tituloModalPago">Registrar Pago</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <input type="hidden" id="pagoClienteId">
+                                <div class="mb-3">
+                                    <label for="montoPago" class="form-label">Monto a Abonar ($)</label>
+                                    <input type="number" step="any" class="form-control" id="montoPago" required placeholder="Ej: 5000">
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                <button type="submit" class="btn btn-success">Confirmar Pago</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- MODAL REGISTRAR GASTO -->
+            <div class="modal fade" id="modalGasto" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content custom-card">
+                        <div class="modal-header">
+                            <h5 class="modal-title">Registrar Nuevo Gasto / Costo</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <form id="formGasto">
+                                <div class="mb-3">
+                                    <label for="conceptoGasto" class="form-label">Concepto (Ej: Luz, Alquiler, Sueldo)</label>
+                                    <input type="text" class="form-control" id="conceptoGasto" required>
+                                </div>
+
+                                <div class="mb-3 text-start">
+                                    <label class="form-label">Fecha del Gasto</label>
+                                    <input type="date" id="inputFechaGasto" class="form-control" required>
+                                </div>
+                            
+                                <div class="mb-3">
+                                    <label for="categoriaGasto" class="form-label">Categoría</label>
+                                    <select id="categoriaGasto" class="form-select">
+                                        <option value="servicios">Servicios (Luz, Gas, Agua, Internet)</option>
+                                        <option value="empleados">Empleados / Personal</option>
+                                        <option value="materia_prima">Compra de Materia Prima / Insumos</option>
+                                        <option value="alquiler">Alquiler / Local</option>
+                                        <option value="varios">Varios / Otros</option>
+                                    </select>
+                                </div>
+                            
+                                <div class="mb-3">
+                                    <label for="montoGasto" class="form-label">Monto ($)</label>
+                                    <input type="number" step="0.01" class="form-control" id="montoGasto" required>
+                                </div>
+                            
+                                <div class="d-flex justify-content-end gap-2">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                    <button type="submit" class="btn btn-dark">Guardar Gasto</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- MODAL NUEVO / EDITAR CLIENTE -->
+            <div class="modal fade" id="modalCliente" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content custom-card">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="tituloModalCliente">Registrar Nuevo Cliente</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <form id="formCliente">
+                                <input type="hidden" id="clienteId">
+
+                                <div class="mb-3">
+                                    <label for="nombreCliente" class="form-label">Nombre y Apellido</label>
+                                    <input type="text" class="form-control" id="nombreCliente" required>
+                                </div>
+                            
+                                <div class="mb-3">
+                                    <label for="dniCliente" class="form-label">DNI</label>
+                                    <input type="text" class="form-control" id="dniCliente">
+                                </div>
+                            
+                                <div class="mb-3">
+                                    <label for="telefonoCliente" class="form-label">Teléfono</label>
+                                    <input type="text" class="form-control" id="telefonoCliente">
+                                </div>
+                            
+                                <div class="d-flex justify-content-end gap-2">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                    <button type="submit" class="btn btn-dark">Guardar Cliente</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- MODAL PARA EDITAR MÁRGENES -->
+            <div class="modal fade" id="modalMargenes" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content custom-card">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="tituloModalMargenes">Editar Márgenes de Ganancia</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <form id="formMargenes">
+                                <input type="hidden" id="productoIdMargen">
+
+                                <div class="mb-3">
+                                    <label for="inputMargenMinorista" class="form-label">Margen Minorista (%)</label>
+                                    <input type="number" step="0.01" class="form-control" id="inputMargenMinorista" required>
+                                </div>
+                            
+                                <div class="mb-3">
+                                    <label for="inputMargenMayorista" class="form-label">Margen Mayorista (%)</label>
+                                    <input type="number" step="0.01" class="form-control" id="inputMargenMayorista" required>
+                                </div>
+                            
+                                <div class="d-flex justify-content-end gap-2">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                    <button type="submit" class="btn btn-dark">Guardar Cambios</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- MODAL CONFIGURACIÓN GLOBAL DE MÁRGENES -->
+            <div class="modal fade" id="modalConfigGlobal" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content custom-card">
+                        <div class="modal-header">
+                            <h5 class="modal-title">Configuración Global de Márgenes</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <p class="text-muted small">Esto aplicará el nuevo porcentaje a <strong>todos</strong> los productos finales de la lista de golpe.</p>
+                            <form id="formConfigGlobal">
+                                <div class="mb-3">
+                                    <label for="globalMinorista" class="form-label">Nuevo Margen Minorista General (%)</label>
+                                    <input type="number" step="0.01" class="form-control" id="globalMinorista" value="100" required>
+                                </div>
+                            
+                                <div class="mb-3">
+                                    <label for="globalMayorista" class="form-label">Nuevo Margen Mayorista General (%)</label>
+                                    <input type="number" step="0.01" class="form-control" id="globalMayorista" value="50" required>
+                                </div>
+                            
+                                <div class="d-flex justify-content-end gap-2">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                    <button type="submit" class="btn btn-dark">Aplicar a Todo</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-pane fade" id="stock">
+                <h2 class="mb-4">Control de Stock (Productos Terminados)</h2>
+            </div>
+
+            <div class="tab-pane fade" id="ventas">
+                <h2 class="mb-4">Punto de Venta / Cargar Venta</h2>
+            </div>
+
+            <div class="tab-pane fade" id="costos">
+                <h2 class="mb-4">Panel Financiero (Protegido con Clave)</h2>
+            </div>
+
+        </div>
+    </div>
+
+<!-- Bootstrap JS Bundle -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<!-- Archivo principal de Lógica y Firebase -->
+<script type="module" src="app.js"></script>
+</body>
+</html>

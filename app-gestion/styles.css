@@ -1,0 +1,126 @@
+body {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    background-color: #f8f9fa;
+}
+.sidebar {
+    width: 260px;
+    height: 100vh;
+    position: fixed;
+    background-color: #d2dc9e;
+    border-right: 1px solid #c2cc8e;
+}
+.sidebar .nav-link {
+    color: #2c3e2d;
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+.sidebar .nav-link.active, .sidebar .nav-link:hover {
+    background-color: #b5c478;
+    color: #1a261b;
+}
+.main-content {
+    margin-left: 260px;
+    padding: 40px;
+}
+.custom-card {
+    background-color: #fcfade;
+    border: 1px solid #e6ecb8;
+}
+
+/* Personalizar la cabecera de las tablas */
+.table thead th {
+    background-color: #e6ecb8 !important; 
+    color: #2c3e2d !important;            
+    font-weight: 700;
+    border-bottom: 2px solid #d2dc9e;
+}
+
+.card, 
+.custom-card, 
+.modal-content, 
+.form-control, 
+.btn, 
+.badge,
+.table {
+    border-radius: 0px !important;
+}
+
+@media print {
+    /* Ocultar panel */
+    nav, 
+    aside, 
+    .sidebar, 
+    #sidebar, 
+    .col-md-3, 
+    .d-flex.justify-content-between.align-items-center.mb-4, 
+    .mb-3, 
+    .columna-acciones {
+        display: none !important;
+    }
+
+    /* contenido principal al 100% */
+    body, html {
+        width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        background-color: white !important;
+    }
+
+    /* tarjetas ocupando todo el ancho */
+    .tab-pane, 
+    #precios, 
+    .card, 
+    .col-md-9, 
+    .col-12 {
+        display: block !important;
+        width: 100% !important;
+        position: absolute !important;
+        left: 0 !important;
+        top: 0 !important;
+        border: none !important;
+        box-shadow: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+
+    /* ocultar demas pestañas menos la principal */
+    .tab-pane:not(.active) {
+        display: none !important;
+    }
+}
+
+@media print {
+    /* Ocultamos elementos innecesarios generales */
+    .columna-acciones, #buscadorPrecios, .btn, nav, sidebar, header {
+        display: none !important;
+    }
+
+    /* 1. Ocultamos siempre la columna 2 (Costo de Producción) al imprimir */
+    th:nth-child(2),
+    td:nth-child(2) {
+        display: none !important;
+    }
+
+    /* 2. Ocultamos siempre la columna 5 (Acciones) al imprimir */
+    th:nth-child(5),
+    td:nth-child(5) {
+        display: none !important;
+    }
+
+    /* Si imprimimos Minorista, ocultamos la columna de precio Mayorista (Columna 4) */
+    body.modo-impresion-minorista th:nth-child(4),
+    body.modo-impresion-minorista td:nth-child(4) {
+        display: none !important;
+    }
+
+    /* Si imprimimos Mayorista, ocultamos la columna de precio Minorista (Columna 3) */
+    body.modo-impresion-mayorista th:nth-child(3),
+    body.modo-impresion-mayorista td:nth-child(3) {
+        display: none !important;
+    }
+
+    /* Ocultamos los textos de porcentajes por seguridad */
+    small.text-muted {
+        display: none !important;
+    }
+}
